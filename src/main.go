@@ -4,8 +4,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/ga28299/ecomGo/db"
 	"github.com/ga28299/ecomGo/transport"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -14,7 +16,24 @@ func main() {
 		port = "8000"
 	}
 
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
+
+	pgConStr := os.Getenv("POSTGRES_CONNECTION_STRING")
+	log.Println("Connecting to PostgreSQL with connection string:", pgConStr)
+
+	_, err := db.SetDB(pgConStr)
+	if err != nil {
+		log.Fatal("Failed to connect to db", err)
+		return
+	}
+
+	defer db.CloseDB()
+
 	router := gin.New()
+	router.Static("/static", "./static")
+	router.LoadHTMLGlob("templates/*.html")
 	router.Use(gin.Logger())
 
 	transport.UserRoutes(router.Group("/api/"))
