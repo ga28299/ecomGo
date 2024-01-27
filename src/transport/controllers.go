@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -121,7 +122,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
 
 	if existingUser == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "That combination not there"})
@@ -167,8 +167,61 @@ func SearchProduct(c *gin.Context) {
 
 }
 
+func SearchSuggestions(c *gin.Context) {
+	query := c.Query("q")
+
+	suggestions, err := db.GetSuggestions(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to execute search query"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"suggestions": suggestions})
+
+}
+
 func SearchProductQuery(c *gin.Context) {
-	c.JSON(200, gin.H{})
+	query := c.Query("q")
+
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No query"})
+		return
+	}
+
+	esQuery := map[string]interface{}{
+		"query": map[string]interface{}{
+			"match": map[string]interface{}{
+				"productName": query,
+			},
+		},
+	}
+
+	// Convert query to JSON
+	jsonQuery, err := json.Marshal(esQuery)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	// Elasticsearch search request
+	res, err := db.ElasticSearch(jsonQuery)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to execute search query"})
+		return
+	}
+	fmt.Println(res)
+
+	// // Parse Elasticsearch response
+	// var result map[string]interface{}
+	// if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse search results"})
+	// 	return
+	// }
+
+	// // Extract and return search results
+	// hits, _ := result["hits"].(map[string]interface{})["hits"].([]interface{})
+	// c.JSON(http.StatusOK, hits)
+
 }
 
 func HashPassword(pwd string) (string, error) {

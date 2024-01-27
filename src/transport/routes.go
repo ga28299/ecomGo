@@ -12,4 +12,11 @@ func UserRoutes(incomingRoutes *gin.RouterGroup) {
 	incomingRoutes.POST("/admin/addproduct", ProductViewerAdmin)
 	incomingRoutes.GET("/users/productview", SearchProduct)
 	incomingRoutes.POST("/users/search", SearchProductQuery)
+
+	incomingRoutes.GET("/", Home)
+	incomingRoutes.GET("/navbar", Nav)
+	incomingRoutes.GET("/footer", Footer)
+	
+	incomingRoutes.GET("/users/search-suggestions", SearchSuggestions)
+
 }

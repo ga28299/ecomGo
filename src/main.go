@@ -19,13 +19,14 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
 	}
-
+	esConStr := os.Getenv("ELASTICSEARCH_CONNECTION_STRING")
 	pgConStr := os.Getenv("POSTGRES_CONNECTION_STRING")
 	log.Println("Connecting to PostgreSQL with connection string:", pgConStr)
+	log.Println("Connecting to Elasticsearch with connection string:", esConStr)
 
-	_, err := db.SetDB(pgConStr)
+	_, _, err := db.SetDB(pgConStr, esConStr)
 	if err != nil {
-		log.Fatal("Failed to connect to db", err)
+		log.Fatal("Failed to connect to dbs", err)
 		return
 	}
 
@@ -33,7 +34,7 @@ func main() {
 
 	router := gin.New()
 	router.Static("/static", "./static")
-	router.LoadHTMLGlob("templates/*.html")
+	router.LoadHTMLGlob("templates/*/**.html")
 	router.Use(gin.Logger())
 
 	transport.UserRoutes(router.Group("/api/"))
